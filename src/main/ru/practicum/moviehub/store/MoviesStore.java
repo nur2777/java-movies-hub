@@ -3,6 +3,7 @@ package ru.practicum.moviehub.store;
 import ru.practicum.moviehub.model.Movie;
 
 import java.util.HashMap;
+import java.util.List;
 
 /**
  * Класс реализует хранение списка фильмов пользователя
@@ -40,4 +41,31 @@ public class MoviesStore {
     public void deleteMovie(Integer id) {
         movieList.remove(id);
     }
+
+    /**
+     * Метод поиска фильма по идентификатору
+     *
+     * @param id идентфикатор фильма
+     * @return сущность фильма
+     */
+    public Movie getMovieById(int id) {
+        return movieList.get(id);
+    }
+
+    /**
+     * Очищает полностью список фильмов пользователя
+     */
+    public void clearStore() {
+        movieList.clear();
+    }
+
+    /**
+     * Метод возвращает все фильмы списка
+     *
+     * @return список фильмов
+     */
+    public List<Movie> getAllMovies() {
+        return movieList.values().stream().toList();
+    }
+
 }

@@ -1,10 +1,13 @@
 package ru.practicum.moviehub.http;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-//import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import ru.practicum.moviehub.MovieHubApp;
+import ru.practicum.moviehub.model.Movie;
 import ru.practicum.moviehub.store.MoviesStore;
 
 import java.net.URI;
@@ -15,23 +18,26 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static ru.practicum.moviehub.MovieHubApp.CT_JSON;
 
 public class MoviesApiTest {
 
+    public static final int duration = 2;
     private static MoviesServer server;
     private static HttpClient client;
+    private static final MoviesStore moviesStore = new MoviesStore();
 
     @BeforeAll
     static void beforeAll() {
-        server = new MoviesServer(new MoviesStore(), MovieHubApp.PORT);
-        client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(2)).build();
+        server = new MoviesServer(moviesStore, MovieHubApp.PORT);
+        client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(duration)).build();
         server.start();
     }
-//
-//    @BeforeEach
-//    void beforeEach() {
-//
-//    }
+
+    @BeforeEach
+    void beforeEach() {
+        moviesStore.clearStore();
+    }
 
     @AfterAll
     static void afterAll() {
@@ -40,15 +46,46 @@ public class MoviesApiTest {
 
     @Test
     void getMovies_whenEmpty_returnsEmptyArray() throws Exception {
-        HttpRequest req = HttpRequest.newBuilder().uri(URI.create(MovieHubApp.BaseURL + MovieHubApp.PORT + "/movies")).GET().build();
+        HttpRequest req = HttpRequest.newBuilder()
+                .uri(URI.create(MovieHubApp.BaseURL + MovieHubApp.PORT + "/movies"))
+                .GET()
+                .build();
+        //moviesStore.addMovie(new Movie("ntc",1987));
         HttpResponse<String> resp = client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
 
         assertEquals(HttpStatusCodes.OK.getCode(), resp.statusCode(), "GET /movies должен вернуть 200");
 
         String contentTypeHeaderValue = resp.headers().firstValue("Content-Type").orElse("");
-        assertEquals("application/json; charset=UTF-8", contentTypeHeaderValue, "Content-Type должен содержать формат данных и кодировку");
+        assertEquals(CT_JSON, contentTypeHeaderValue, "Content-Type должен содержать формат данных и кодировку");
 
         String body = resp.body().trim();
         assertTrue(body.startsWith("[") && body.endsWith("]"), "Ожидается JSON-массив");
+
+        String sourceMoviesJson = MovieHubApp.gson.toJson(moviesStore.getAllMovies().stream().toList());
+        assertEquals(sourceMoviesJson,body,"Ожидается пустой JSON-массив");
     }
+
+    @Test
+    void getMovies_whenNotEmpty_returnsNotEmptyArray() throws Exception {
+        HttpRequest req = HttpRequest.newBuilder()
+                .uri(URI.create(MovieHubApp.BaseURL + MovieHubApp.PORT + "/movies"))
+                .GET()
+                .build();
+        moviesStore.addMovie(new Movie("Матрица",1999));
+        moviesStore.addMovie(new Movie("Бригада",2002));
+        moviesStore.addMovie(new Movie("Интерстеллар",2014));
+        HttpResponse<String> resp = client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+
+        assertEquals(HttpStatusCodes.OK.getCode(), resp.statusCode(), "GET /movies должен вернуть 200");
+
+        String contentTypeHeaderValue = resp.headers().firstValue("Content-Type").orElse("");
+        assertEquals(CT_JSON, contentTypeHeaderValue, "Content-Type должен содержать формат данных и кодировку");
+
+        String body = resp.body().trim();
+        assertTrue(body.startsWith("[") && body.endsWith("]"), "Ожидается JSON-массив");
+
+        String sourceMoviesJson = MovieHubApp.gson.toJson(moviesStore.getAllMovies().stream().toList());
+        assertEquals(sourceMoviesJson,body,"Исходный JSON и JSON-массив тела ответа не совпадают");
+    }
+
 }
