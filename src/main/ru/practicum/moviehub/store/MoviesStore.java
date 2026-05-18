@@ -2,6 +2,7 @@ package ru.practicum.moviehub.store;
 
 import ru.practicum.moviehub.model.Movie;
 
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 
@@ -24,12 +25,18 @@ public class MoviesStore {
 
     /**
      * Метод добавления фильма
-     *
-     * @return идентификатор фильма
      */
-    public Integer addMovie(Movie movie) {
+    public void addMovie(String title,int year) {
         lastId += 1;
+        Movie movie = new Movie(lastId,title,year);
         movieList.put(lastId, movie);
+    }
+
+    /**
+     * Метод добавления фильма c возвратом идентификатора добавленного фильма
+     */
+    public Integer addMovieReturnId(String title,int year) {
+        addMovie(title,year);
         return lastId;
     }
 
@@ -57,6 +64,7 @@ public class MoviesStore {
      */
     public void clearStore() {
         movieList.clear();
+        this.lastId = 0;
     }
 
     /**
