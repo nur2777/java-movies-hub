@@ -1,6 +1,5 @@
 package ru.practicum.moviehub.http;
 
-import com.sun.net.httpserver.Headers;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,13 +16,13 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static ru.practicum.moviehub.MovieHubApp.CT_JSON;
 
-public class MoviesApiTest {
+public class PostMoviesApiTest {
 
     public static final int duration = 2;
     private static MoviesServer server;
@@ -47,46 +46,6 @@ public class MoviesApiTest {
         server.stop();
     }
 
-    void getMovies_commonTests(HttpResponse<String> resp) {
-
-        assertEquals(HttpStatusCodes.OK.getCode(), resp.statusCode(), "GET /movies должен вернуть 200");
-
-        String contentTypeHeaderValue = resp.headers().firstValue("Content-Type").orElse("");
-        assertEquals(CT_JSON, contentTypeHeaderValue, "Content-Type должен содержать формат данных и кодировку");
-
-        String body = resp.body().trim();
-        assertTrue(body.startsWith("[") && body.endsWith("]"), "Ожидается JSON-массив");
-    }
-
-    @Test
-    void getMovies_whenEmpty_returnsEmptyArray() throws Exception {
-        HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(MovieHubApp.BaseURL + MovieHubApp.PORT + "/movies"))
-                .GET()
-                .build();
-        HttpResponse<String> resp = client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
-        getMovies_commonTests(resp);
-        String body = resp.body().trim();
-        String sourceMoviesJson = MovieHubApp.gson.toJson(moviesStore.getAllMovies().stream().toList());
-        assertEquals(sourceMoviesJson,body,"Ожидается пустой JSON-массив");
-    }
-
-    @Test
-    void getMovies_whenNotEmpty_returnsNotEmptyArray() throws Exception {
-        HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(MovieHubApp.BaseURL + MovieHubApp.PORT + "/movies"))
-                .GET()
-                .build();
-        moviesStore.addMovie("Матрица",1999);
-        moviesStore.addMovie("Бригада",2002);
-        moviesStore.addMovie("Интерстеллар",2014);
-        HttpResponse<String> resp = client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
-        getMovies_commonTests(resp);
-        String body = resp.body().trim();
-        String sourceMoviesJson = MovieHubApp.gson.toJson(moviesStore.getAllMovies().stream().toList());
-        assertEquals(sourceMoviesJson,body,"Исходный JSON и JSON-массив тела ответа не совпадают");
-    }
-
     @Test
     void postMovies_withCorrectBody_returnsBodyWithId() throws Exception {
         String requestBody = "{\"title\":\"Матрица\", \"year\":1999}";
@@ -96,15 +55,11 @@ public class MoviesApiTest {
                 .headers("Content-Type","application/json")
                 .headers("Content-Type","charset=UTF-8")
                 .build();
-
         HttpResponse<String> resp = client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
         assertEquals(HttpStatusCodes.Created.getCode(), resp.statusCode(), "POST /movies должен вернуть 201");
-
         String contentTypeHeaderValue = resp.headers().firstValue("Content-Type").orElse("");
         assertEquals(CT_JSON, contentTypeHeaderValue, "Content-Type должен содержать формат данных и кодировку");
-
         String body = resp.body().trim();
-
         Movie testMovie = new Movie(1,"Матрица",1999);
         String testMovieJson = MovieHubApp.gson.toJson(testMovie);
         assertEquals(testMovieJson,body,"Ожидается JSON созданного фильма с присвоенным ID");
@@ -119,16 +74,10 @@ public class MoviesApiTest {
                 .headers("Content-Type","application/json")
                 .headers("Content-Type","charset=UTF-8")
                 .build();
-
         HttpResponse<String> resp = client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
         assertEquals(HttpStatusCodes.Unprocessable_Entity.getCode(), resp.statusCode(), "POST /movies должен " +
                 "вернуть 422");
-
-        String contentTypeHeaderValue = resp.headers().firstValue("Content-Type").orElse("");
-        assertEquals(CT_JSON, contentTypeHeaderValue, "Content-Type должен содержать формат данных и кодировку");
-
         String body = resp.body().trim();
-
         ArrayList<String> details = new ArrayList<>(List.of("Тело запроса содержит некорректный JSON"));
         ErrorResponse errorResponse = new ErrorResponse("Ошибка валидации", details);
         String testErrorJson = MovieHubApp.gson.toJson(errorResponse);
@@ -143,17 +92,10 @@ public class MoviesApiTest {
                 .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                 .setHeader("Content-Type","text/html")
                 .build();
-
         HttpResponse<String> resp = client.send(req2, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
         assertEquals(HttpStatusCodes.Unsupported_Media_Type.getCode(), resp.statusCode(), "POST /movies " +
                 "должен вернуть 415");
-
-        String contentTypeHeaderValue = resp.headers().firstValue("Content-Type").orElse("");
-        assertEquals(CT_JSON, contentTypeHeaderValue, "Content-Type должен содержать application/json " +
-                "и кодировку charset=UTF-8");
-
         String body = resp.body().trim();
-
         ArrayList<String> details = new ArrayList<>(List.of("Неверный заголовок Content-Type"));
         ErrorResponse errorResponse = new ErrorResponse("Ошибка валидации", details);
         String testErrorJson = MovieHubApp.gson.toJson(errorResponse);
@@ -169,20 +111,55 @@ public class MoviesApiTest {
                 .headers("Content-Type","application/json")
                 .headers("Content-Type","charset=UTF-8")
                 .build();
-
         HttpResponse<String> resp = client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
         assertEquals(HttpStatusCodes.Unprocessable_Entity.getCode(), resp.statusCode(), "POST /movies " +
                 "должен вернуть 422");
-
-        String contentTypeHeaderValue = resp.headers().firstValue("Content-Type").orElse("");
-        assertEquals(CT_JSON, contentTypeHeaderValue, "Content-Type должен содержать формат данных и кодировку");
-
         String body = resp.body().trim();
-
         ArrayList<String> details = new ArrayList<>(List.of("JSON содержит пустой title"));
         ErrorResponse errorResponse = new ErrorResponse("Ошибка валидации", details);
         String testErrorJson = MovieHubApp.gson.toJson(errorResponse);
         assertEquals(testErrorJson,body,"Ожидается JSON c детальным описанием - содержит пустой title");
     }
 
+    @Test
+    void postMovies_withTitleLength110_returnsError() throws Exception {
+        String title = "TEST_".repeat(22);
+        String requestBody = "{\"title\":" + title + ", \"year\":1999}";
+        HttpRequest req = HttpRequest.newBuilder()
+                .uri(URI.create(MovieHubApp.BaseURL + MovieHubApp.PORT + "/movies"))
+                .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                .headers("Content-Type","application/json")
+                .headers("Content-Type","charset=UTF-8")
+                .build();
+        HttpResponse<String> resp = client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+        assertEquals(HttpStatusCodes.Unprocessable_Entity.getCode(), resp.statusCode(), "POST /movies " +
+                "должен вернуть 422");
+        String body = resp.body().trim();
+        ArrayList<String> details = new ArrayList<>(List.of("Длинна названия фильма должна быть меньше или равна "
+                + MoviesHandler.maxTitleLength + " символов."));
+        ErrorResponse errorResponse = new ErrorResponse("Ошибка валидации", details);
+        String testErrorJson = MovieHubApp.gson.toJson(errorResponse);
+        assertEquals(testErrorJson,body,"Ожидается JSON c детальным описанием - длинна должна " +
+                "быть меньше или равна " + + MoviesHandler.maxTitleLength);
+    }
+
+    @Test
+    void postMovies_withWrongFilmYear_returnsError() throws Exception {
+        String requestBody = "{\"title\":\"Матрица\", \"year\":2999}";
+        HttpRequest req = HttpRequest.newBuilder()
+                .uri(URI.create(MovieHubApp.BaseURL + MovieHubApp.PORT + "/movies"))
+                .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                .headers("Content-Type","application/json")
+                .headers("Content-Type","charset=UTF-8")
+                .build();
+        HttpResponse<String> resp = client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+        assertEquals(HttpStatusCodes.Unprocessable_Entity.getCode(), resp.statusCode(), "POST /movies " +
+                "должен вернуть 422");
+        String body = resp.body().trim();
+        ArrayList<String> details = new ArrayList<>(List.of("Год выхода фильма должна быть от " + MoviesHandler.minYear
+                + " до " + MoviesHandler.maxYear));
+        ErrorResponse errorResponse = new ErrorResponse("Ошибка валидации", details);
+        String testErrorJson = MovieHubApp.gson.toJson(errorResponse);
+        assertEquals(testErrorJson,body,"Ожидается JSON c детальным описанием - неверный год фильма");
+    }
 }

@@ -50,9 +50,19 @@ public class MoviesStore {
     }
 
     /**
-     * Метод поиска фильма по идентификатору
+     * Метод проверки существования фильма по идентификатору
      *
-     * @param id идентфикатор фильма
+     * @param id идентификатор фильма
+     * @return true если фильм существует, иначе false
+     */
+    public boolean filmExistsById(int id) {
+        return movieList.containsKey(id);
+    }
+
+    /**
+     * Метод получения фильма по идентификатору
+     *
+     * @param id идентификатор фильма
      * @return сущность фильма
      */
     public Movie getMovieById(int id) {
