@@ -52,36 +52,56 @@ public class MoviesHandler extends BaseHttpHandler {
         String method = ex.getRequestMethod();
         String path = ex.getRequestURI().getPath();
         String[] splitStrings = path.split("/");
+        String queryParams = ex.getRequestURI().getQuery();
         if (splitStrings.length > 1 && splitStrings[1].equals("movies")) {
             switch (method.toUpperCase()) {
                 case "GET":
-                    getMovies(ex, splitStrings);
+                case "DELETE":
+                    getDeleteMovies(ex, splitStrings, method.toUpperCase(), queryParams);
                     break;
-            case "POST":
+                case "POST":
                     postMovies(ex);
                     break;
-            default:
-                super.sendNoContent(ex, HttpStatusCodes.Bad_Request.getCode());
+                default:
+                    super.sendNoContent(ex, HttpStatusCodes.Method_Not_Allowed.getCode());
             }
         } else {
             super.sendNoContent(ex, HttpStatusCodes.Bad_Request.getCode());
         }
     }
 
-    /** Метод обработки запроса GET /movies
+    /**
+     * Метод обработки запросов GET и DELETE /movies
+     *
      * @param ex данные запроса
      */
-    private void getMovies(HttpExchange ex,String[] splitStrings) throws IOException {
+    private void getDeleteMovies(HttpExchange ex, String[] splitStrings, String method, String queryParams) throws IOException {
         String responseJson = "";
         HttpStatusCodes httpStatusCode = HttpStatusCodes.OK;
         ArrayList<String> errorDetails = new ArrayList<>();
-        if (splitStrings.length == 2) {
-            responseJson = MovieHubApp.gson.toJson(moviesStore.getAllMovies());
+        if (splitStrings.length == 2 && method.equals("GET")) {
+            if (queryParams == null) {
+                responseJson = MovieHubApp.gson.toJson(moviesStore.getAllMovies());
+            } else {
+                try {
+                    int idx = queryParams.indexOf("=");
+                    int year = Integer.parseInt(queryParams.substring(idx + 1));
+                    responseJson = MovieHubApp.gson.toJson(moviesStore.getMovieByYear(year));
+                } catch (NumberFormatException e) {
+                    httpStatusCode = HttpStatusCodes.Bad_Request;
+                    errorDetails.add("Некорректный параметр year");
+                }
+            }
         } else if ((splitStrings.length == 3) && !splitStrings[2].isEmpty()) {
             try {
                 int id = Integer.parseInt(splitStrings[2]);
                 if (moviesStore.filmExistsById(id)) {
-                    responseJson = MovieHubApp.gson.toJson(moviesStore.getMovieById(id));
+                    if (method.equals("GET")) {
+                        responseJson = MovieHubApp.gson.toJson(moviesStore.getMovieById(id));
+                    } else if (method.equals("DELETE")) {
+                        moviesStore.deleteMovie(id);
+                        httpStatusCode = HttpStatusCodes.No_content;
+                    }
                 } else {
                     httpStatusCode = HttpStatusCodes.Not_found;
                     errorDetails.add("Фильм не найден");
@@ -96,14 +116,24 @@ public class MoviesHandler extends BaseHttpHandler {
         }
 
         if (!errorDetails.isEmpty()) {
-            ErrorResponse errorResponse = new ErrorResponse("Ошибка при получении фильма",errorDetails);
+            ErrorResponse errorResponse;
+            if (method.equals("GET")) {
+                errorResponse = new ErrorResponse("Ошибка при получении фильма", errorDetails);
+            } else {
+                errorResponse = new ErrorResponse("Ошибка при удалении фильма", errorDetails);
+            }
             responseJson = MovieHubApp.gson.toJson(errorResponse);
         }
-        super.sendJson(ex, httpStatusCode.getCode(), responseJson);
+        if (httpStatusCode == HttpStatusCodes.No_content) {
+            super.sendNoContent(ex, httpStatusCode.getCode());
+        } else {
+            super.sendJson(ex, httpStatusCode.getCode(), responseJson);
+        }
     }
 
     /**
      * Метод обработки запроса POST /movies
+     *
      * @param ex данные запроса
      */
     private void postMovies(HttpExchange ex) throws IOException {
@@ -164,7 +194,7 @@ public class MoviesHandler extends BaseHttpHandler {
             } else {
                 httpStatusCode = HttpStatusCodes.Unprocessable_Entity;
             }
-            ErrorResponse errorResponse = new ErrorResponse("Ошибка валидации",errorDetails);
+            ErrorResponse errorResponse = new ErrorResponse("Ошибка валидации", errorDetails);
             responseJson = MovieHubApp.gson.toJson(errorResponse);
         }
         super.sendJson(ex, httpStatusCode.getCode(), responseJson);

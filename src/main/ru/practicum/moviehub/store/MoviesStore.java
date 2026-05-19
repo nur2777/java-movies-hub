@@ -70,6 +70,19 @@ public class MoviesStore {
     }
 
     /**
+     * Метод получения списка фильма по заданному году
+     *
+     * @param year год выхода фильма
+     * @return список фильмовы
+     */
+    public List<Movie> getMovieByYear(int year) {
+        return movieList.values()
+                .stream()
+                .filter(movie -> movie.getYear() == year)
+                .toList();
+    }
+
+    /**
      * Очищает полностью список фильмов пользователя
      */
     public void clearStore() {
