@@ -69,10 +69,12 @@ public class MoviesHandler extends BaseHttpHandler {
         }
     }
 
-    /**
-     * Метод обработки запросов GET и DELETE /movies
-     *
+
+    /** Метод обработки запросов GET и DELETE /movies
      * @param ex данные запроса
+     * @param splitStrings массив элементов пути запроса
+     * @param method метод запроса
+     * @param queryParams параметры строки запроса
      */
     private void getDeleteMovies(HttpExchange ex, String[] splitStrings, String method, String queryParams) throws IOException {
         String responseJson = "";
