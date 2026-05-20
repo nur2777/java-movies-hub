@@ -20,7 +20,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static ru.practicum.moviehub.MovieHubApp.CT_JSON;
 
-public class DeleteMoviesApiTest {
+public class GetMoviesByIdApiTest {
 
     public static final int duration = 2;
     private static MoviesServer server;
@@ -45,51 +45,53 @@ public class DeleteMoviesApiTest {
     }
 
     @Test
-    void deleteMovies_whenFilmExist_returnsFilm() throws Exception {
+    void getMoviesId_whenFilmExist_returnsFilm() throws Exception {
         HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(MovieHubApp.BaseURL + MovieHubApp.PORT + "/movies/2"))
-                .DELETE()
+                .uri(URI.create(MovieHubApp.BaseURL + MovieHubApp.PORT + "/movies/1"))
+                .GET()
                 .build();
         moviesStore.addMovie("Матрица", 1999);
-        moviesStore.addMovie("Бригада", 2002);
         HttpResponse<String> resp = client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
-        assertEquals(HttpStatusCodes.No_content.getCode(), resp.statusCode(), "DELETE /movies должен вернуть 204");
+        assertEquals(HttpStatusCodes.OK.getCode(), resp.statusCode(), "GET /movies должен вернуть 200");
         String contentTypeHeaderValue = resp.headers().firstValue("Content-Type").orElse("");
         assertEquals(CT_JSON, contentTypeHeaderValue, "Content-Type должен содержать формат данных и кодировку");
+        String body = resp.body().trim();
+        String sourceMoviesJson = MovieHubApp.gson.toJson(moviesStore.getMovieById(1));
+        assertEquals(sourceMoviesJson, body, "Исходный JSON фильма и JSON тела ответа не совпадают");
     }
 
     @Test
-    void deleteMovies_whenFilmNotFound_returnsError() throws Exception {
+    void getMoviesId_whenFilmNotFound_returnsError() throws Exception {
         HttpRequest req = HttpRequest.newBuilder()
                 .uri(URI.create(MovieHubApp.BaseURL + MovieHubApp.PORT + "/movies/11"))
-                .DELETE()
+                .GET()
                 .build();
         moviesStore.addMovie("Матрица", 1999);
         moviesStore.addMovie("Бригада", 2002);
         moviesStore.addMovie("Интерстеллар", 2014);
         HttpResponse<String> resp = client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
-        assertEquals(HttpStatusCodes.Not_found.getCode(), resp.statusCode(), "DELETE /movies должен вернуть 404");
+        assertEquals(HttpStatusCodes.Not_found.getCode(), resp.statusCode(), "GET /movies должен вернуть 404");
         String body = resp.body().trim();
         ArrayList<String> details = new ArrayList<>(List.of("Фильм не найден"));
-        ErrorResponse errorResponse = new ErrorResponse("Ошибка при удалении фильма", details);
+        ErrorResponse errorResponse = new ErrorResponse("Ошибка при получении фильма", details);
         String testErrorJson = MovieHubApp.gson.toJson(errorResponse);
         assertEquals(testErrorJson, body, "Ожидается JSON c детальным описанием - Фильм не найден");
     }
 
     @Test
-    void deleteMovies_whenIdIncorrect_returnsError() throws Exception {
+    void getMoviesId_whenIdIncorrect_returnsError() throws Exception {
         HttpRequest req = HttpRequest.newBuilder()
                 .uri(URI.create(MovieHubApp.BaseURL + MovieHubApp.PORT + "/movies/11ee22"))
-                .DELETE()
+                .GET()
                 .build();
         moviesStore.addMovie("Матрица", 1999);
         moviesStore.addMovie("Бригада", 2002);
         moviesStore.addMovie("Интерстеллар", 2014);
         HttpResponse<String> resp = client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
-        assertEquals(HttpStatusCodes.Bad_Request.getCode(), resp.statusCode(), "DELETE /movies должен вернуть 400");
+        assertEquals(HttpStatusCodes.Bad_Request.getCode(), resp.statusCode(), "GET /movies должен вернуть 400");
         String body = resp.body().trim();
         ArrayList<String> details = new ArrayList<>(List.of("Некорректный ID"));
-        ErrorResponse errorResponse = new ErrorResponse("Ошибка при удалении фильма", details);
+        ErrorResponse errorResponse = new ErrorResponse("Ошибка при получении фильма", details);
         String testErrorJson = MovieHubApp.gson.toJson(errorResponse);
         assertEquals(testErrorJson, body, "Ожидается JSON c детальным описанием - Некорректный ID");
     }

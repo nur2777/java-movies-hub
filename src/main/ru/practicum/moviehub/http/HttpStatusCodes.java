@@ -12,9 +12,9 @@ public enum HttpStatusCodes {
     Unauthorized(401, "Для выполнения запроса нужна аутентификация, но вместе с запросом не были " +
             "переданы авторизационные данные."),
     Not_found(404, "Сервер не может найти запрашиваемый ресурс."),
-    Method_Not_Allowed(405,"Используемый метод HTTP-запроса не поддерживается"),
-    Unsupported_Media_Type(415,"Получен запрос с неправильным значением заголовка Content-Type"),
-    Unprocessable_Entity(422,"Ошибка валидации полученных данных");
+    Method_Not_Allowed(405, "Используемый метод HTTP-запроса не поддерживается"),
+    Unsupported_Media_Type(415, "Получен запрос с неправильным значением заголовка Content-Type"),
+    Unprocessable_Entity(422, "Ошибка валидации полученных данных");
     /**
      * Числовой код ответа сервера
      */
@@ -33,7 +33,4 @@ public enum HttpStatusCodes {
         return code;
     }
 
-    public String getDescription() {
-        return description;
-    }
 }

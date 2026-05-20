@@ -16,18 +16,8 @@ public class ErrorResponse {
      */
     private ArrayList<String> details;
 
-    public ErrorResponse(String error) {
-        this.error = error;
-        this.details = new ArrayList<>();
-    }
-
     public ErrorResponse(String error, ArrayList<String> details) {
         this.error = error;
         this.details = details;
-    }
-
-    public void addNewDetails(String detail) {
-        System.out.println("Новое описание ошибки:" + detail);
-        details.add(detail);
     }
 }

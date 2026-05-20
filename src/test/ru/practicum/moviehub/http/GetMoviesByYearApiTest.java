@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static ru.practicum.moviehub.MovieHubApp.CT_JSON;
 
-public class GetMoviesWithIdApiTest {
+public class GetMoviesByYearApiTest {
 
     public static final int duration = 2;
     private static MoviesServer server;
@@ -46,55 +46,61 @@ public class GetMoviesWithIdApiTest {
     }
 
     @Test
-    void getMoviesId_whenFilmExist_returnsFilm() throws Exception {
+    void getMoviesYear_whenFilmsExist_returnsNotEmptyArray() throws Exception {
         HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(MovieHubApp.BaseURL + MovieHubApp.PORT + "/movies/1"))
+                .uri(URI.create(MovieHubApp.BaseURL + MovieHubApp.PORT + "/movies?year=1999"))
                 .GET()
                 .build();
-        moviesStore.addMovie("Матрица",1999);
+        moviesStore.addMovie("Матрица", 1999);
+        moviesStore.addMovie("Зеленая миля", 1999);
+        moviesStore.addMovie("Бригада", 2002);
+        moviesStore.addMovie("Интерстеллар", 2014);
         HttpResponse<String> resp = client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
         assertEquals(HttpStatusCodes.OK.getCode(), resp.statusCode(), "GET /movies должен вернуть 200");
         String contentTypeHeaderValue = resp.headers().firstValue("Content-Type").orElse("");
         assertEquals(CT_JSON, contentTypeHeaderValue, "Content-Type должен содержать формат данных и кодировку");
         String body = resp.body().trim();
-        String sourceMoviesJson = MovieHubApp.gson.toJson(moviesStore.getMovieById(1));
-        assertEquals(sourceMoviesJson,body,"Исходный JSON фильма и JSON тела ответа не совпадают");
+        assertTrue(body.startsWith("[") && body.endsWith("]"), "Ожидается JSON-массив");
+        MoviesStore sourceMovieStore = new MoviesStore();
+        sourceMovieStore.addMovie("Матрица", 1999);
+        sourceMovieStore.addMovie("Зеленая миля", 1999);
+        String sourceMoviesJson = MovieHubApp.gson.toJson(sourceMovieStore.getAllMovies().stream().toList());
+        assertEquals(sourceMoviesJson, body, "Исходный JSON и JSON-массив тела ответа не совпадают");
     }
 
     @Test
-    void getMoviesId_whenFilmNotFound_returnsError() throws Exception {
+    void getMoviesYear_whenFilmNotFound_returnsEmptyArray() throws Exception {
         HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(MovieHubApp.BaseURL + MovieHubApp.PORT + "/movies/11"))
+                .uri(URI.create(MovieHubApp.BaseURL + MovieHubApp.PORT + "/movies?year=2099"))
                 .GET()
                 .build();
-        moviesStore.addMovie("Матрица",1999);
-        moviesStore.addMovie("Бригада",2002);
-        moviesStore.addMovie("Интерстеллар",2014);
+        moviesStore.addMovie("Матрица", 1999);
+        moviesStore.addMovie("Бригада", 2002);
+        moviesStore.addMovie("Интерстеллар", 2014);
         HttpResponse<String> resp = client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
-        assertEquals(HttpStatusCodes.Not_found.getCode(), resp.statusCode(), "GET /movies должен вернуть 404");
+        assertEquals(HttpStatusCodes.OK.getCode(), resp.statusCode(), "GET /movies должен вернуть 200");
+        String contentTypeHeaderValue = resp.headers().firstValue("Content-Type").orElse("");
+        assertEquals(CT_JSON, contentTypeHeaderValue, "Content-Type должен содержать формат данных и кодировку");
         String body = resp.body().trim();
-        ArrayList<String> details = new ArrayList<>(List.of("Фильм не найден"));
-        ErrorResponse errorResponse = new ErrorResponse("Ошибка при получении фильма", details);
-        String testErrorJson = MovieHubApp.gson.toJson(errorResponse);
-        assertEquals(testErrorJson,body,"Ожидается JSON c детальным описанием - Фильм не найден");
+        String sourceMoviesJson = MovieHubApp.gson.toJson(new MoviesStore().getAllMovies().stream().toList());
+        assertEquals(sourceMoviesJson, body, "Ожидается пустой JSON-массив");
     }
 
     @Test
-    void getMoviesId_whenIdIncorrect_returnsError() throws Exception {
+    void getMoviesYear_whenYearIncorrect_returnsError() throws Exception {
         HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(MovieHubApp.BaseURL + MovieHubApp.PORT + "/movies/11ee22"))
+                .uri(URI.create(MovieHubApp.BaseURL + MovieHubApp.PORT + "/movies?year=20w99"))
                 .GET()
                 .build();
-        moviesStore.addMovie("Матрица",1999);
-        moviesStore.addMovie("Бригада",2002);
-        moviesStore.addMovie("Интерстеллар",2014);
+        moviesStore.addMovie("Матрица", 1999);
+        moviesStore.addMovie("Бригада", 2002);
+        moviesStore.addMovie("Интерстеллар", 2014);
         HttpResponse<String> resp = client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
         assertEquals(HttpStatusCodes.Bad_Request.getCode(), resp.statusCode(), "GET /movies должен вернуть 400");
         String body = resp.body().trim();
-        ArrayList<String> details = new ArrayList<>(List.of("Некорректный ID"));
+        ArrayList<String> details = new ArrayList<>(List.of("Некорректный параметр запроса — 'year'"));
         ErrorResponse errorResponse = new ErrorResponse("Ошибка при получении фильма", details);
         String testErrorJson = MovieHubApp.gson.toJson(errorResponse);
-        assertEquals(testErrorJson,body,"Ожидается JSON c детальным описанием - Некорректный ID");
+        assertEquals(testErrorJson, body, "Ожидается JSON c детальным описанием - Некорректный параметр запроса — 'year'");
     }
-
 }

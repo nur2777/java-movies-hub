@@ -5,8 +5,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import ru.practicum.moviehub.MovieHubApp;
-import ru.practicum.moviehub.api.ErrorResponse;
-import ru.practicum.moviehub.model.Movie;
 import ru.practicum.moviehub.store.MoviesStore;
 
 import java.net.URI;
@@ -15,8 +13,6 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static ru.practicum.moviehub.MovieHubApp.CT_JSON;
@@ -46,12 +42,9 @@ public class GetMoviesApiTest {
     }
 
     void getMovies_commonTests(HttpResponse<String> resp) {
-
         assertEquals(HttpStatusCodes.OK.getCode(), resp.statusCode(), "GET /movies должен вернуть 200");
-
         String contentTypeHeaderValue = resp.headers().firstValue("Content-Type").orElse("");
         assertEquals(CT_JSON, contentTypeHeaderValue, "Content-Type должен содержать формат данных и кодировку");
-
         String body = resp.body().trim();
         assertTrue(body.startsWith("[") && body.endsWith("]"), "Ожидается JSON-массив");
     }
@@ -66,7 +59,7 @@ public class GetMoviesApiTest {
         getMovies_commonTests(resp);
         String body = resp.body().trim();
         String sourceMoviesJson = MovieHubApp.gson.toJson(moviesStore.getAllMovies().stream().toList());
-        assertEquals(sourceMoviesJson,body,"Ожидается пустой JSON-массив");
+        assertEquals(sourceMoviesJson, body, "Ожидается пустой JSON-массив");
     }
 
     @Test
@@ -75,13 +68,26 @@ public class GetMoviesApiTest {
                 .uri(URI.create(MovieHubApp.BaseURL + MovieHubApp.PORT + "/movies"))
                 .GET()
                 .build();
-        moviesStore.addMovie("Матрица",1999);
-        moviesStore.addMovie("Бригада",2002);
-        moviesStore.addMovie("Интерстеллар",2014);
+        moviesStore.addMovie("Матрица", 1999);
+        moviesStore.addMovie("Бригада", 2002);
+        moviesStore.addMovie("Интерстеллар", 2014);
         HttpResponse<String> resp = client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
         getMovies_commonTests(resp);
         String body = resp.body().trim();
         String sourceMoviesJson = MovieHubApp.gson.toJson(moviesStore.getAllMovies().stream().toList());
-        assertEquals(sourceMoviesJson,body,"Исходный JSON и JSON-массив тела ответа не совпадают");
+        assertEquals(sourceMoviesJson, body, "Исходный JSON и JSON-массив тела ответа не совпадают");
+    }
+
+    @Test
+    void movies_whenWrongMethod_returnsError() throws Exception {
+        HttpRequest.BodyPublisher bodyPublisher = HttpRequest.BodyPublishers.ofString("{\"key\":\"value\"}");
+
+        HttpRequest req = HttpRequest.newBuilder()
+                .uri(URI.create(MovieHubApp.BaseURL + MovieHubApp.PORT + "/movies"))
+                .PUT(bodyPublisher)
+                .build();
+        HttpResponse<String> resp = client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+        assertEquals(HttpStatusCodes.Method_Not_Allowed.getCode(), resp.statusCode(), "PUT /movies " +
+                "должен вернуть 405");
     }
 }

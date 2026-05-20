@@ -44,8 +44,7 @@ public class MoviesHandler extends BaseHttpHandler {
     /**
      * Переопределенный метод хендлера
      *
-     * @param ex the exchange containing the request from the
-     *           client and used to send the response
+     * @param ex данные запроса
      */
     @Override
     public void handle(HttpExchange ex) throws IOException {
@@ -89,7 +88,7 @@ public class MoviesHandler extends BaseHttpHandler {
                     responseJson = MovieHubApp.gson.toJson(moviesStore.getMovieByYear(year));
                 } catch (NumberFormatException e) {
                     httpStatusCode = HttpStatusCodes.Bad_Request;
-                    errorDetails.add("Некорректный параметр year");
+                    errorDetails.add("Некорректный параметр запроса — 'year'");
                 }
             }
         } else if ((splitStrings.length == 3) && !splitStrings[2].isEmpty()) {
