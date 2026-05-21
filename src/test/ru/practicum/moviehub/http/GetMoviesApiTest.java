@@ -30,6 +30,7 @@ public class GetMoviesApiTest {
      */
     static final String BASE_URL = "http://localhost:";
     static final int DURATION = 2;
+
     @BeforeAll
     static void beforeAll() {
         server = new MoviesServer(MOVIES_STORE, PORT);
