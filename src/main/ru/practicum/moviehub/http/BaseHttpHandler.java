@@ -26,6 +26,7 @@ public abstract class BaseHttpHandler implements HttpHandler {
      * @param status статус ответа
      * @param json   тело ответа в формате JSON
      */
+
     protected void sendJson(HttpExchange ex, int status, String json) throws IOException {
         ex.getResponseHeaders().set("Content-Type", CT_JSON);
         byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
