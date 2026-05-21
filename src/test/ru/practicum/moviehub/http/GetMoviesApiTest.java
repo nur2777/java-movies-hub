@@ -15,25 +15,31 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static ru.practicum.moviehub.MovieHubApp.CT_JSON;
 
 public class GetMoviesApiTest {
-
-    public static final int duration = 2;
     private static MoviesServer server;
     private static HttpClient client;
-    private static final MoviesStore moviesStore = new MoviesStore();
-
+    private static final MoviesStore MOVIES_STORE = new MoviesStore();
+    static final int PORT = 8080;
+    /**
+     * Константа стандартного содержимого заголовка Content-Type
+     */
+    static final String CT_JSON = "application/json; charset=UTF-8";
+    /**
+     * Константа базовой части пути адреса запроса
+     */
+    static final String BASE_URL = "http://localhost:";
+    static final int DURATION = 2;
     @BeforeAll
     static void beforeAll() {
-        server = new MoviesServer(moviesStore, MovieHubApp.PORT);
-        client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(duration)).build();
+        server = new MoviesServer(MOVIES_STORE, PORT);
+        client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(DURATION)).build();
         server.start();
     }
 
     @BeforeEach
     void beforeEach() {
-        moviesStore.clearStore();
+        MOVIES_STORE.clearStore();
     }
 
     @AfterAll
@@ -52,29 +58,29 @@ public class GetMoviesApiTest {
     @Test
     void getMovies_whenEmpty_returnsEmptyArray() throws Exception {
         HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(MovieHubApp.BaseURL + MovieHubApp.PORT + "/movies"))
+                .uri(URI.create(BASE_URL + PORT + "/movies"))
                 .GET()
                 .build();
         HttpResponse<String> resp = client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
         getMovies_commonTests(resp);
         String body = resp.body().trim();
-        String sourceMoviesJson = MovieHubApp.gson.toJson(moviesStore.getAllMovies().stream().toList());
+        String sourceMoviesJson = MovieHubApp.gson.toJson(MOVIES_STORE.getAllMovies().stream().toList());
         assertEquals(sourceMoviesJson, body, "Ожидается пустой JSON-массив");
     }
 
     @Test
     void getMovies_whenNotEmpty_returnsNotEmptyArray() throws Exception {
         HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(MovieHubApp.BaseURL + MovieHubApp.PORT + "/movies"))
+                .uri(URI.create(BASE_URL + PORT + "/movies"))
                 .GET()
                 .build();
-        moviesStore.addMovie("Матрица", 1999);
-        moviesStore.addMovie("Бригада", 2002);
-        moviesStore.addMovie("Интерстеллар", 2014);
+        MOVIES_STORE.addMovie("Матрица", 1999);
+        MOVIES_STORE.addMovie("Бригада", 2002);
+        MOVIES_STORE.addMovie("Интерстеллар", 2014);
         HttpResponse<String> resp = client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
         getMovies_commonTests(resp);
         String body = resp.body().trim();
-        String sourceMoviesJson = MovieHubApp.gson.toJson(moviesStore.getAllMovies().stream().toList());
+        String sourceMoviesJson = MovieHubApp.gson.toJson(MOVIES_STORE.getAllMovies().stream().toList());
         assertEquals(sourceMoviesJson, body, "Исходный JSON и JSON-массив тела ответа не совпадают");
     }
 
@@ -83,7 +89,7 @@ public class GetMoviesApiTest {
         HttpRequest.BodyPublisher bodyPublisher = HttpRequest.BodyPublishers.ofString("{\"key\":\"value\"}");
 
         HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(MovieHubApp.BaseURL + MovieHubApp.PORT + "/movies"))
+                .uri(URI.create(BASE_URL + PORT + "/movies"))
                 .PUT(bodyPublisher)
                 .build();
         HttpResponse<String> resp = client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));

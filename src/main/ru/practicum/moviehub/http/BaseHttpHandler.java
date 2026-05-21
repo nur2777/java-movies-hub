@@ -7,8 +7,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 
-import static ru.practicum.moviehub.MovieHubApp.CT_JSON;
-
 /**
  * Базовый класс для всех хендлеров приложения
  */
@@ -17,7 +15,10 @@ public abstract class BaseHttpHandler implements HttpHandler {
      * Константа для случая отсутствия ответа
      */
     private static final int RESPONSE_LENGTH = -1;
-
+    /**
+     * Константа стандартного содержимого заголовка Content-Type
+     */
+    private static final String CT_JSON = "application/json; charset=UTF-8";
     /**
      * Базовая реализация отправки ответа с содержимым
      *

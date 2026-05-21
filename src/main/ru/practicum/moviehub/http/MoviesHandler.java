@@ -21,21 +21,24 @@ import java.util.List;
  * Класс хендлера для запроса на эндпоинт /movies
  */
 public class MoviesHandler extends BaseHttpHandler {
-    MoviesStore moviesStore;
+    /**
+     * Основное хранилище фильмов пользователя
+     */
+    private MoviesStore moviesStore;
     /**
      * Минимально возможный год согласно ТЗ
      * от 1888 (год самого раннего из сохранившихся фильмов)
      */
-    public static final int minYear = 1888;
+    private static final int MIN_YEAR = 1888;
     /**
      * Максимально возможный год согласно ТЗ
      * до текущий год + 1
      */
-    public static final int maxYear = LocalDate.now().getYear() + 1;
+    private static final int MAX_YEAR = LocalDate.now().getYear() + 1;
     /**
      * Максимальная длинна названия фильма
      */
-    public static final int maxTitleLength = 100;
+    private static final int MAX_TITLE_LENGTH = 100;
 
     public MoviesHandler(MoviesStore moviesStore) {
         this.moviesStore = moviesStore;
@@ -162,8 +165,8 @@ public class MoviesHandler extends BaseHttpHandler {
                     errorDetails.add("JSON содержит пустой title");
                 } else {
                     String title = jsonObject.get("title").getAsString();
-                    if (title.length() > maxTitleLength) {
-                        errorDetails.add("Длинна названия фильма должна быть меньше или равна " + maxTitleLength +
+                    if (title.length() > MAX_TITLE_LENGTH) {
+                        errorDetails.add("Длинна названия фильма должна быть меньше или равна " + MAX_TITLE_LENGTH +
                                 " символов.");
                     }
                 }
@@ -173,8 +176,8 @@ public class MoviesHandler extends BaseHttpHandler {
                     errorDetails.add("JSON содержит пустой year");
                 } else {
                     int year = jsonObject.get("year").getAsInt();
-                    if (year < minYear || year >= maxYear) {
-                        errorDetails.add("Год выхода фильма должна быть от " + minYear + " до " + maxYear);
+                    if (year < MIN_YEAR || year >= MAX_YEAR) {
+                        errorDetails.add("Год выхода фильма должна быть от " + MIN_YEAR + " до " + MAX_YEAR);
                     }
                 }
             } else {

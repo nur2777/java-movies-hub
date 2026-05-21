@@ -15,29 +15,31 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static ru.practicum.moviehub.MovieHubApp.CT_JSON;
+import static ru.practicum.moviehub.http.GetMoviesApiTest.*;
 
 public class PostMoviesApiTest {
-
-    public static final int duration = 2;
+    private static final int MIN_YEAR = 1888;
+    private static final int MAX_YEAR = LocalDate.now().getYear() + 1;
+    private static final int MAX_TITLE_LENGTH = 100;
     private static MoviesServer server;
     private static HttpClient client;
-    private static final MoviesStore moviesStore = new MoviesStore();
+    private static final MoviesStore MOVIES_STORE = new MoviesStore();
 
     @BeforeAll
     static void beforeAll() {
-        server = new MoviesServer(moviesStore, MovieHubApp.PORT);
-        client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(duration)).build();
+        server = new MoviesServer(MOVIES_STORE, PORT);
+        client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(DURATION)).build();
         server.start();
     }
 
     @BeforeEach
     void beforeEach() {
-        moviesStore.clearStore();
+        MOVIES_STORE.clearStore();
     }
 
     @AfterAll
@@ -49,7 +51,7 @@ public class PostMoviesApiTest {
     void postMovies_withCorrectBody_returnsBodyWithId() throws Exception {
         String requestBody = "{\"title\":\"Матрица\", \"year\":1999}";
         HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(MovieHubApp.BaseURL + MovieHubApp.PORT + "/movies"))
+                .uri(URI.create(BASE_URL + PORT + "/movies"))
                 .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                 .headers("Content-Type", "application/json")
                 .headers("Content-Type", "charset=UTF-8")
@@ -68,7 +70,7 @@ public class PostMoviesApiTest {
     void postMovies_withIncorrectJson_returnsError() throws Exception {
         String incorrectRequestBody = "{\"test\":\"test\", \"error\":1, \"description\":\"test description\"}";
         HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(MovieHubApp.BaseURL + MovieHubApp.PORT + "/movies"))
+                .uri(URI.create(BASE_URL + PORT + "/movies"))
                 .POST(HttpRequest.BodyPublishers.ofString(incorrectRequestBody))
                 .headers("Content-Type", "application/json")
                 .headers("Content-Type", "charset=UTF-8")
@@ -87,7 +89,7 @@ public class PostMoviesApiTest {
     void postMovies_withIncorrectContentType_returnsError() throws Exception {
         String requestBody = "{\"title\":\"Матрица\", \"year\":1999}";
         HttpRequest req2 = HttpRequest.newBuilder()
-                .uri(URI.create(MovieHubApp.BaseURL + MovieHubApp.PORT + "/movies"))
+                .uri(URI.create(BASE_URL + PORT + "/movies"))
                 .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                 .setHeader("Content-Type", "text/html")
                 .build();
@@ -105,7 +107,7 @@ public class PostMoviesApiTest {
     void postMovies_withEmptyTitle_returnsError() throws Exception {
         String requestBody = "{\"title\":null, \"year\":1999}";
         HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(MovieHubApp.BaseURL + MovieHubApp.PORT + "/movies"))
+                .uri(URI.create(BASE_URL + PORT + "/movies"))
                 .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                 .headers("Content-Type", "application/json")
                 .headers("Content-Type", "charset=UTF-8")
@@ -125,7 +127,7 @@ public class PostMoviesApiTest {
         String title = "TEST_".repeat(22);
         String requestBody = "{\"title\":" + title + ", \"year\":1999}";
         HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(MovieHubApp.BaseURL + MovieHubApp.PORT + "/movies"))
+                .uri(URI.create(BASE_URL + PORT + "/movies"))
                 .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                 .headers("Content-Type", "application/json")
                 .headers("Content-Type", "charset=UTF-8")
@@ -135,18 +137,18 @@ public class PostMoviesApiTest {
                 "должен вернуть 422");
         String body = resp.body().trim();
         ArrayList<String> details = new ArrayList<>(List.of("Длинна названия фильма должна быть меньше или равна "
-                + MoviesHandler.maxTitleLength + " символов."));
+                + MAX_TITLE_LENGTH + " символов."));
         ErrorResponse errorResponse = new ErrorResponse("Ошибка валидации", details);
         String testErrorJson = MovieHubApp.gson.toJson(errorResponse);
         assertEquals(testErrorJson, body, "Ожидается JSON c детальным описанием - длинна должна " +
-                "быть меньше или равна " + +MoviesHandler.maxTitleLength);
+                "быть меньше или равна " + MAX_TITLE_LENGTH);
     }
 
     @Test
     void postMovies_withWrongFilmYear_returnsError() throws Exception {
         String requestBody = "{\"title\":\"Матрица\", \"year\":2999}";
         HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(MovieHubApp.BaseURL + MovieHubApp.PORT + "/movies"))
+                .uri(URI.create(BASE_URL + PORT + "/movies"))
                 .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                 .headers("Content-Type", "application/json")
                 .headers("Content-Type", "charset=UTF-8")
@@ -155,8 +157,8 @@ public class PostMoviesApiTest {
         assertEquals(HttpStatusCodes.Unprocessable_Entity.getCode(), resp.statusCode(), "POST /movies " +
                 "должен вернуть 422");
         String body = resp.body().trim();
-        ArrayList<String> details = new ArrayList<>(List.of("Год выхода фильма должна быть от " + MoviesHandler.minYear
-                + " до " + MoviesHandler.maxYear));
+        ArrayList<String> details = new ArrayList<>(List.of("Год выхода фильма должна быть от " + MIN_YEAR
+                + " до " + MAX_YEAR));
         ErrorResponse errorResponse = new ErrorResponse("Ошибка валидации", details);
         String testErrorJson = MovieHubApp.gson.toJson(errorResponse);
         assertEquals(testErrorJson, body, "Ожидается JSON c детальным описанием - неверный год фильма");

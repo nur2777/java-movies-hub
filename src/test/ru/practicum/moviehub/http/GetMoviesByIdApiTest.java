@@ -18,25 +18,23 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static ru.practicum.moviehub.MovieHubApp.CT_JSON;
+import static ru.practicum.moviehub.http.GetMoviesApiTest.*;
 
 public class GetMoviesByIdApiTest {
-
-    public static final int duration = 2;
     private static MoviesServer server;
     private static HttpClient client;
-    private static final MoviesStore moviesStore = new MoviesStore();
+    private static final MoviesStore MOVIES_STORE = new MoviesStore();
 
     @BeforeAll
     static void beforeAll() {
-        server = new MoviesServer(moviesStore, MovieHubApp.PORT);
-        client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(duration)).build();
+        server = new MoviesServer(MOVIES_STORE, PORT);
+        client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(DURATION)).build();
         server.start();
     }
 
     @BeforeEach
     void beforeEach() {
-        moviesStore.clearStore();
+        MOVIES_STORE.clearStore();
     }
 
     @AfterAll
@@ -47,28 +45,28 @@ public class GetMoviesByIdApiTest {
     @Test
     void getMoviesId_whenFilmExist_returnsFilm() throws Exception {
         HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(MovieHubApp.BaseURL + MovieHubApp.PORT + "/movies/1"))
+                .uri(URI.create(BASE_URL + PORT + "/movies/1"))
                 .GET()
                 .build();
-        moviesStore.addMovie("Матрица", 1999);
+        MOVIES_STORE.addMovie("Матрица", 1999);
         HttpResponse<String> resp = client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
         assertEquals(HttpStatusCodes.OK.getCode(), resp.statusCode(), "GET /movies должен вернуть 200");
         String contentTypeHeaderValue = resp.headers().firstValue("Content-Type").orElse("");
         assertEquals(CT_JSON, contentTypeHeaderValue, "Content-Type должен содержать формат данных и кодировку");
         String body = resp.body().trim();
-        String sourceMoviesJson = MovieHubApp.gson.toJson(moviesStore.getMovieById(1));
+        String sourceMoviesJson = MovieHubApp.gson.toJson(MOVIES_STORE.getMovieById(1));
         assertEquals(sourceMoviesJson, body, "Исходный JSON фильма и JSON тела ответа не совпадают");
     }
 
     @Test
     void getMoviesId_whenFilmNotFound_returnsError() throws Exception {
         HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(MovieHubApp.BaseURL + MovieHubApp.PORT + "/movies/11"))
+                .uri(URI.create(BASE_URL + PORT + "/movies/11"))
                 .GET()
                 .build();
-        moviesStore.addMovie("Матрица", 1999);
-        moviesStore.addMovie("Бригада", 2002);
-        moviesStore.addMovie("Интерстеллар", 2014);
+        MOVIES_STORE.addMovie("Матрица", 1999);
+        MOVIES_STORE.addMovie("Бригада", 2002);
+        MOVIES_STORE.addMovie("Интерстеллар", 2014);
         HttpResponse<String> resp = client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
         assertEquals(HttpStatusCodes.Not_found.getCode(), resp.statusCode(), "GET /movies должен вернуть 404");
         String body = resp.body().trim();
@@ -81,12 +79,12 @@ public class GetMoviesByIdApiTest {
     @Test
     void getMoviesId_whenIdIncorrect_returnsError() throws Exception {
         HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(MovieHubApp.BaseURL + MovieHubApp.PORT + "/movies/11ee22"))
+                .uri(URI.create(BASE_URL + PORT + "/movies/11ee22"))
                 .GET()
                 .build();
-        moviesStore.addMovie("Матрица", 1999);
-        moviesStore.addMovie("Бригада", 2002);
-        moviesStore.addMovie("Интерстеллар", 2014);
+        MOVIES_STORE.addMovie("Матрица", 1999);
+        MOVIES_STORE.addMovie("Бригада", 2002);
+        MOVIES_STORE.addMovie("Интерстеллар", 2014);
         HttpResponse<String> resp = client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
         assertEquals(HttpStatusCodes.Bad_Request.getCode(), resp.statusCode(), "GET /movies должен вернуть 400");
         String body = resp.body().trim();

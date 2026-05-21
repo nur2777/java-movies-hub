@@ -13,7 +13,7 @@ public class MoviesServer {
     /**
      * Бэклог приложения
      */
-    private static final int backlog = 0;
+    private static final int BACKLOG = 0;
     /**
      * HTTP-сервер
      */
@@ -21,7 +21,7 @@ public class MoviesServer {
 
     public MoviesServer(MoviesStore moviesStore, int port) {
         try {
-            server = HttpServer.create(new InetSocketAddress(port), backlog);
+            server = HttpServer.create(new InetSocketAddress(port), BACKLOG);
             server.createContext("/movies", new MoviesHandler(moviesStore));
         } catch (IOException e) {
             throw new RuntimeException("Не удалось создать HTTP-сервер", e);
@@ -40,7 +40,7 @@ public class MoviesServer {
      * Метод останавливает сервер
      */
     public void stop() {
-        server.stop(backlog);
+        server.stop(BACKLOG);
         System.out.println("Сервер остановлен");
     }
 }

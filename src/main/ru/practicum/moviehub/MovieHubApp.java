@@ -9,16 +9,7 @@ public class MovieHubApp {
     /**
      * Порт приложения
      */
-    public static final int PORT = 8080;
-    /**
-     * Константа базовой части пути адреса запроса
-     */
-    public static final String BaseURL = "http://localhost:";
-    /**
-     * Константа стандартного содержимого заголовка Content-Type
-     */
-    public static final String CT_JSON = "application/json; charset=UTF-8";
-
+    private static final int PORT = 8080;
     /**
      * Стандартный Gson-объект для одинакового преобразования
      */
